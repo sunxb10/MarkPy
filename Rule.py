@@ -91,7 +91,7 @@ class CodeBlockRule:
 
 
 
-class HeadingRule:
+class HeaderRule:
     """
     HTML标题 <h1>~<h6>
     """

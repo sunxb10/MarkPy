@@ -25,7 +25,7 @@ class Parser:
         self.add_rule(Rule.ImageRule())
         self.add_rule(Rule.LinkRule())
         self.add_rule(Rule.EmphasisRule())
-        self.add_rule(Rule.HeadingRule())  
+        self.add_rule(Rule.HeaderRule())  
         self.add_rule(Rule.ParagraphRule())
 
     @classmethod
