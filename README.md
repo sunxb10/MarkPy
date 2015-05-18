@@ -24,21 +24,21 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 
 本程序目前只实现了部分语法，具体如下所示：
 
-- [ ] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html) :exclamation:**TODO**：支持在Markdown文件直接使用HTML标签
+- [ ] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html)   :bangbang:**TODO**：支持在Markdown文件直接使用HTML标签
 - [x] [特殊字符自动转换](http://daringfireball.net/projects/markdown/syntax#autoescape)：`>`、`<`和`&`
 - [x] [段落](http://daringfireball.net/projects/markdown/syntax#p)
 - [x] [Setext风格标题](http://daringfireball.net/projects/markdown/syntax#header)
-- [ ] [Atx风格标题](http://daringfireball.net/projects/markdown/syntax#header) :heavy_exclamation_mark:**TODO**：支持闭合形式的Atx风格标题（close Atx-style headers）
+- [ ] [Atx风格标题](http://daringfireball.net/projects/markdown/syntax#header)   :bangbang:**TODO**：支持闭合形式的Atx风格标题（close Atx-style headers）
 - [x] [区块引用](http://daringfireball.net/projects/markdown/syntax#blockquote)
-- [ ] [列表](http://daringfireball.net/projects/markdown/syntax#list) :heavy_exclamation_mark:**TODO**：支持列表的缩进嵌套
+- [ ] [列表](http://daringfireball.net/projects/markdown/syntax#list)   :bangbang:**TODO**：支持列表的缩进嵌套
 - [x] [行内代码](http://daringfireball.net/projects/markdown/syntax#code)
 - [x] [行间代码块](https://help.github.com/articles/github-flavored-markdown/#fenced-code-blocks)
-- [ ] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr) :exclamation:**TODO**：支持水平分隔线
+- [ ] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr)   :bangbang:**TODO**：支持水平分隔线
 - [x] [行间式超链接](http://daringfireball.net/projects/markdown/syntax#link)（inline-style links）
-- [ ] [参考式超链接](http://daringfireball.net/projects/markdown/syntax#link)（reference-style links) :exclamation:**TODO**：支持参考式超链接
+- [ ] [参考式超链接](http://daringfireball.net/projects/markdown/syntax#link)（reference-style links)   :bangbang:**TODO**：支持参考式超链接
 - [x] [网址自动连接](http://daringfireball.net/projects/markdown/syntax#autolink)
 - [x] [Email自动连接](http://daringfireball.net/projects/markdown/syntax#autolink)
 - [x] [行间式图片链接](http://daringfireball.net/projects/markdown/syntax#img)
-- [ ] [参考式图片链接](http://daringfireball.net/projects/markdown/syntax#img)  :exclamation:**TODO**：支持参考式图片链接
+- [ ] [参考式图片链接](http://daringfireball.net/projects/markdown/syntax#img)    :bangbang:**TODO**：支持参考式图片链接
 - [x] [强调](http://daringfireball.net/projects/markdown/syntax#em)
-- [ ] [反斜杠逃逸](http://daringfireball.net/projects/markdown/syntax#backslash) :exclamation:**TODO**：支持反斜杠逃逸
+- [ ] [反斜杠逃逸](http://daringfireball.net/projects/markdown/syntax#backslash)   :bangbang:**TODO**：支持反斜杠逃逸
