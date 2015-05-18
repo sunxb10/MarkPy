@@ -1,5 +1,5 @@
 """
-各种转换规则
+各种解析转换规则
 """
 
 import re, random, binascii

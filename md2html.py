@@ -4,9 +4,6 @@
 使用：
     (1). python md2html.py test.md  # 将指定的输入文件test.md转换为test.html
     (2). python md2html.py input # 批量转换/input目录下的Markdown文件，结果保存到/output目录
-
-备注：
-    输入文件必须以.md, .mdown或.markdown为后缀名（不区分大小写）
 """
 
 import os, sys
