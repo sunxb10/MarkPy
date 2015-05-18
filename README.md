@@ -32,7 +32,7 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 - [x] [区块引用](http://daringfireball.net/projects/markdown/syntax#blockquote)
 - [ ] [列表](http://daringfireball.net/projects/markdown/syntax#list)   :exclamation:**TODO**：支持列表的缩进嵌套
 - [x] [行内代码](http://daringfireball.net/projects/markdown/syntax#code)
-- [x] [行间代码块](https://help.github.com/articles/github-flavored-markdown/#fenced-code-blocks)
+- [x] [行间代码块（GitHub-flavored fenced code blocks）](https://help.github.com/articles/github-flavored-markdown/#fenced-code-blocks)
 - [ ] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr)   :exclamation:**TODO**：支持水平分隔线
 - [x] [行间式超链接（inline-style links）](http://daringfireball.net/projects/markdown/syntax#link)
 - [ ] [参考式超链接（reference-style links）](http://daringfireball.net/projects/markdown/syntax#link)   :exclamation:**TODO**：支持参考式超链接
