@@ -55,3 +55,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+
+# User Defined
+output/
+.html
