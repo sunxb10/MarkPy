@@ -8,6 +8,7 @@ a (toy) parser of Markdown implemented in pure Python
 + `md2html.py`：主程序
 + `Parser.py`：解析器
 + `Rule.py`：解析规则
++ `/test`：测试样例
 
 ## 使用方法
 
