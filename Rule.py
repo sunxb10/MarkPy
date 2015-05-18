@@ -291,7 +291,6 @@ class LinkRule:
                 new_address += c
         return new_address
 
-
     @classmethod
     def _link_1_substring(cls, match):
         """
