@@ -25,7 +25,7 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 本程序目前只实现了部分语法，具体如下所示：
 
 - [ ] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html)   :exclamation:**TODO**：支持在Markdown文件直接使用HTML标签
-- [x] [特殊字符自动转换](http://daringfireball.net/projects/markdown/syntax#autoescape)：`>`、`<`和`&`
+- [x] [特殊字符自动转换（`>`、`<`和`&`）](http://daringfireball.net/projects/markdown/syntax#autoescape)
 - [x] [段落](http://daringfireball.net/projects/markdown/syntax#p)
 - [x] [Setext风格标题](http://daringfireball.net/projects/markdown/syntax#header)
 - [ ] [Atx风格标题](http://daringfireball.net/projects/markdown/syntax#header)   :exclamation:**TODO**：支持闭合形式的Atx风格标题（close Atx-style headers）
@@ -34,8 +34,8 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 - [x] [行内代码](http://daringfireball.net/projects/markdown/syntax#code)
 - [x] [行间代码块](https://help.github.com/articles/github-flavored-markdown/#fenced-code-blocks)
 - [ ] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr)   :exclamation:**TODO**：支持水平分隔线
-- [x] [行间式超链接](http://daringfireball.net/projects/markdown/syntax#link)（inline-style links）
-- [ ] [参考式超链接](http://daringfireball.net/projects/markdown/syntax#link)（reference-style links)   :exclamation:**TODO**：支持参考式超链接
+- [x] [行间式超链接（inline-style links）](http://daringfireball.net/projects/markdown/syntax#link)
+- [ ] [参考式超链接（reference-style links)](http://daringfireball.net/projects/markdown/syntax#link)   :exclamation:**TODO**：支持参考式超链接
 - [x] [网址自动连接](http://daringfireball.net/projects/markdown/syntax#autolink)
 - [x] [Email自动连接](http://daringfireball.net/projects/markdown/syntax#autolink)
 - [x] [行间式图片链接](http://daringfireball.net/projects/markdown/syntax#img)
