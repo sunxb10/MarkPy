@@ -3,7 +3,7 @@
 
 使用：
     (1). python md2html.py test.md  # 将指定的输入文件test.md转换为test.html
-    (2). python md2html.py input # 将/input目录下所有Markdown文件批量转换为HTML文件并保存在/output目录下
+    (2). python md2html.py input # 批量转换/input目录下的Markdown文件，结果保存到/output目录
 
 备注：
     输入文件必须以.md, .mdown或.markdown为后缀名（不区分大小写）
@@ -31,6 +31,10 @@ if __name__ == '__main__':  # 主程序
     input_files = []  # 输入文件列表
     output_files = []  # 输出文件列表
     parser = Parser()  # 转换器
+
+    if len(sys.argv) < 2:
+        print('Fatal Error: Input files need to be appointed.')
+        sys.exit()
 
     # 生成输入输出文件列表
     if os.path.isfile(sys.argv[1]):  # 检查所给参数是不是有效的文件
