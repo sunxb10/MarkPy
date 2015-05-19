@@ -1,5 +1,5 @@
 # MarkPy
-a (toy) parser of Markdown implemented in pure Python
+a (toy) parser of Markdown implemented in pure Python 3.x, no need for third-party modules
 
 使用纯Python语言实现的简易Markdown解析器，可将Markdown文件转换为HTML页面
 
@@ -42,4 +42,4 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 - [x] [行间式图片链接](http://daringfireball.net/projects/markdown/syntax#img)
 - [ ] [参考式图片链接](http://daringfireball.net/projects/markdown/syntax#img)    :exclamation:**TODO**：支持参考式图片链接
 - [x] [强调](http://daringfireball.net/projects/markdown/syntax#em)
-- [ ] [反斜杠逃逸](http://daringfireball.net/projects/markdown/syntax#backslash)   :exclamation:**TODO**：支持反斜杠逃逸
+- [x] [反斜杠逃逸](http://daringfireball.net/projects/markdown/syntax#backslash)

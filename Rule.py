@@ -4,16 +4,17 @@
 规则执行的顺序会影响程序结果，以下是经测试正确的顺序：
 
     1. SpecialChRule
-    2. CodeBlockRule
-    3. InlineCodeRule
-    4. HeaderRule
-    5. HrRule
-    6. BlockquoteRule
-    7. ListRule
-    8. ImageRule
-    9. LinkRule
-    10. EmphasisRule
-    11. ParagraphRule
+    2. BackslashRule
+    3. CodeBlockRule
+    4. InlineCodeRule
+    5. HeaderRule
+    6. HrRule
+    7. BlockquoteRule
+    8. ListRule
+    9. ImageRule
+    10. LinkRule
+    11. EmphasisRule
+    12. ParagraphRule
 """
 
 import re, random, binascii
@@ -120,7 +121,14 @@ class HeaderRule:
         """
         Atx风格的替换函数，Python正则表达式的替换符可以是函数，其参数是match对象
         """
-        return '<h%d>%s</h%d>' % (len(match.group(1)), match.group(2), len(match.group(1)))
+        # 考虑到闭合形式Atx风格标题，标题文字之后可能跟有若干连续的#字符
+        header_split_last = match.group(2).split(' ', 1)[-1]
+        # 判断标题后是否跟有一连串的#
+        if header_split_last == '#' * len(header_split_last):
+            s = match.group(2).split(' ', 1)[0]
+        else:
+            s = match.group(2)
+        return '<h%d>%s</h%d>' % (len(match.group(1)), s, len(match.group(1)))
 
     @classmethod
     def _setext_substring(cls, match):
@@ -454,4 +462,58 @@ class ImageRule:
         """
         if not inside_code:
             block = self._img_pattern.sub(self._img_substring, block)
+        return block
+
+
+
+class BackslashRule:
+    """
+    反斜杠逃逸
+    """
+    def __init__(self):
+        self._backslash_pattern = re.compile(r'\\([*+()[\]{}\\_.!#`-])')
+
+    @classmethod
+    def _backslash_substring(cls, match):
+        """
+        反斜杠逃逸替换函数
+        """
+        if match.group(1) == '_':
+            return '&#95;'
+        elif match.group(1) == '*':
+            return '&#42;'
+        elif match.group(1) == '+':
+            return '&#43;'
+        elif match.group(1) == '`':
+            return '&#96;'
+        elif match.group(1) == '[':
+            return '&#91;'
+        elif match.group(1) == ']':
+            return '&#93;'
+        elif match.group(1) == '(':
+            return '&#40;'
+        elif match.group(1) == ')':
+            return '&#41;'
+        elif match.group(1) == '{':
+            return '&#123;'
+        elif match.group(1) == '}':
+            return '&#125;' 
+        elif match.group(1) == '\\':
+            return '&#92;'
+        elif match.group(1) == '#':
+            return '&#35;'
+        elif match.group(1) == '!':
+            return '&#33;'
+        elif match.group(1) == '.':
+            return '&#46;'
+        else:    # match.group(1) == '-'
+            return '&#45;'
+
+
+    def process(self, block):
+        """
+        按照规则进行处理
+        """
+        if not inside_code:
+            block = self._backslash_pattern.sub(self._backslash_substring, block)
         return block
