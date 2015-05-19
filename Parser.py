@@ -47,7 +47,7 @@ class Parser:
             if line.strip():  # 当前行不是空行
                 block.append(line)
             else:  # 当前行是空行，输出文本块
-                yield ''.join(block).strip()
+                yield ''.join(block)
                 block = []
 
 

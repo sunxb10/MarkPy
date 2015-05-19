@@ -19,7 +19,10 @@
 
 import re, random, binascii
 
-inside_code = False  # 判断是否在行间代码段内，这是一个全局标志，会影响所有转换规则的执行
+# 包含行间代码的文本块段落与普通段落不同，由CodeBlockRule单独处理
+# 设置全局标志位以避免ParagraphRule的段落规则与CodeBlockRule冲突或重复
+have_code = False  
+
 
 
 class SpecialChRule:
@@ -31,17 +34,7 @@ class SpecialChRule:
         self._rightangle_pattern = re.compile('>')
         # 匹配字符&时必须使用否定预测零宽断言（negative lookahead assertion）以避免破坏HTML实体
         self._ampersand_pattern = re.compile('&(?!#*[0-9a-zA-Z]+;)')
-        # 由于Python标准库的re模块不支持非定长的回顾断言（lookbehind assertion），
-        # 因此这里需要先将<和>转换为lt;和gt;，再将其中符合HTML标签格式的&lt;tag&gt;还原为<tag>
-        self._html_tag_pattern = re.compile('&lt;(/[a-zA-Z]+?[0-9]*?|[a-zA-Z]+?.*?)&gt;')
-
-    @classmethod
-    def _html_tag_substring(cls, match):
-        """
-        HTML标签替换函数
-        """
-        return '<%s>' % match.group(1)
-
+        
     def process(self, block):
         """
         按照规则进行处理
@@ -49,7 +42,6 @@ class SpecialChRule:
         block = self._leftangle_pattern.sub('&lt;', block)
         block = self._rightangle_pattern.sub('&gt;', block)
         block = self._ampersand_pattern.sub('&amp;', block)
-        block = self._html_tag_pattern.sub(self._html_tag_substring, block)
         return block
 
 
@@ -83,42 +75,66 @@ class InlineCodeRule:
 
 class CodeBlockRule:
     """
-    HTML代码块 <pre><code>
+    HTML行间代码块 <pre><code>
     """
     def __init__(self):
-        global inside_code 
+        global have_code 
         self._code_pattern = re.compile('(?<=^)`{3}.*(?=$)', re.M)
+        self._inside_code = False  # 记录行间代码块的开始和延续，_inside_code是line-level flag
+        have_code = False # 记录当前文本块是否包含行间代码，have_code是block-level flag
 
     def process(self, block):
         """
         按照规则进行处理
         """
-        global inside_code
-        # 整个代码区有可能处于同一个block中，因此需要循环两遍分别处理开头和结尾的```
-        for i in range(0, 2):  
-            if inside_code:  # 当前已经在代码区内
-                # 替换掉_和*以防止被EmphasisRule错误解析
-                block = re.sub('_', '&#95;', block)
-                block = re.sub('\*', '&#42;', block)
-                tmp_block = self._code_pattern.sub('</code></pre>', block, 1)
-                if tmp_block != block:  # 发生了替换，终止代码区
-                    inside_code = False
-                    block = tmp_block
-            else:  # 当前不在代码区内
-                tmp_block = self._code_pattern.sub('<pre><code>', block, 1)
-                if tmp_block != block:  # 发生了替换，开启代码区
-                    inside_code = True
-                    block = tmp_block
-                    block = re.sub('_', '&#95;', block)
-                    block = re.sub('\*', '&#42;', block)
-        return block
+        global have_code
+        new_block = ''
+        # 考虑到行间代码有可能整个位于同一block中，因此必须在line level上进行处理
+        # 将block切分成行，注意其末尾可能有\n，如此则split('\n')会产生无意义的空白行
+        line_list = [line for line in block.split('\n') if line]
+        for line in line_list:
+            match = self._code_pattern.search(line)  # 搜索当前文本行中的```标志
+            if match:  # 当前文本行中有```标志
+                have_code = True  # 当前文本行包含行间代码
+                if self._inside_code: # 当前正处于行间代码块中，结束当前代码块
+                    line = '</code></pre></p>' + line[match.end(0):]
+                    self._inside_code = False
+                else:  # 当前不在行间代码块中，开启新的代码块
+                    line = '<p><code><pre>' + line[match.end(0):]
+                    self._inside_code = True
+            else: # 当前文本行中没有```标志
+                if self._inside_code:  # 当前正处于行间代码块中
+                    have_code = True
+                    # 延续当前代码块，替换特殊符号
+                    line = re.sub('#', '&#35;', line)
+                    line = re.sub('_', '&#95;', line)
+                    line = re.sub('\*', '&#42;', line)
+                    line = re.sub('\+', '&#43;', line)
+                    line = re.sub('`', '&#96;', line)
+                    line = re.sub('\[', '&#91;', line)
+                    line = re.sub('\]', '&#93;', line)
+                    line = re.sub('\(', '&#40;', line)
+                    line = re.sub('\)', '&#41;', line)
+                    line = re.sub('{', '&#123;', line)
+                    line = re.sub('}', '&#125;', line)
+                    line = re.sub(r'\\', '&#92;', line)
+                    line = re.sub('!', '&#33;', line)
+                    line = re.sub('\.', '&#46;', line)
+                    line = re.sub('-', '&#45;', line)
+                else:
+                    have_code = False
+            
+            line += '\n'  # split('\n')切分得到的行本身是没有换行符的，这里添加换行符     
+            new_block += line
+        return new_block
 
     def reset(self):
         """
         重置规则
         """
-        global inside_code
-        inside_code = False
+        global have_code
+        have_code = False
+        self._inside_code = False
 
 
 
@@ -160,9 +176,8 @@ class HeaderRule:
         """
         按照规则进行处理
         """
-        if not inside_code:  #　只处理不在代码区块内的文本块，下同
-            block = self._atx_pattern.sub(self._atx_substring, block)  # Atx <h1>~<h6>
-            block = self._setext_pattern.sub(self._setext_substring, block)  # Setext <h1>、<h2>
+        block = self._atx_pattern.sub(self._atx_substring, block)  # Atx <h1>~<h6>
+        block = self._setext_pattern.sub(self._setext_substring, block)  # Setext <h1>、<h2>
         return block
 
 
@@ -179,10 +194,9 @@ class HrRule:
         """
         按照规则进行处理
         """
-        if not inside_code:  #　只处理不在代码区块内的文本块，下同
-            block = self._hr_1_pattern.sub('<hr />', block)
-            block = self._hr_2_pattern.sub('<hr />', block)
-            block = self._hr_3_pattern.sub('<hr />', block)
+        block = self._hr_1_pattern.sub('<hr />', block)
+        block = self._hr_2_pattern.sub('<hr />', block)
+        block = self._hr_3_pattern.sub('<hr />', block)
         return block
 
 
@@ -208,32 +222,31 @@ class ListRule:
         """
         按照规则进行处理
         """
-        if not inside_code:
-            # 先考虑无序列表
-            tmp_block_unord = self._list_unord_pattern.sub(self._list_substring, block)
-            if self._insidelist_unord:  # 已经在无序列表内
-                if tmp_block_unord == block:  # 当前文本块无列表项，结束当前列表
-                    block = '</ul>\n' + tmp_block_unord
-                    self._insidelist_unord = False
-                else:  # 当前文本块有列表项，延续当前列表
-                    block = tmp_block_unord
-            else:  # 不在无序列表内
-                if tmp_block_unord != block:  # 当前文本块有列表项，开始新的无序列表
-                    block = '<ul>\n' + tmp_block_unord
-                    self._insidelist_unord = True
+        # 先考虑无序列表
+        tmp_block_unord = self._list_unord_pattern.sub(self._list_substring, block)
+        if self._insidelist_unord:  # 已经在无序列表内
+            if tmp_block_unord == block:  # 当前文本块无列表项，结束当前列表
+                block = '</ul>\n' + tmp_block_unord
+                self._insidelist_unord = False
+            else:  # 当前文本块有列表项，延续当前列表
+                block = tmp_block_unord
+        else:  # 不在无序列表内
+            if tmp_block_unord != block:  # 当前文本块有列表项，开始新的无序列表
+                block = '<ul>\n' + tmp_block_unord
+                self._insidelist_unord = True
 
-            # 再考虑有序列表
-            tmp_block_ord = self._list_ord_pattern.sub(self._list_substring, block)           
-            if self._insidelist_ord:  # 已经在有序列表内
-                if tmp_block_ord == block:  # 当前文本块无列表项，结束当前列表
-                    block = '</ol>\n' + tmp_block_ord
-                    self._insidelist_ord = False
-                else:  # 当前文本块有列表项，延续当前列表
-                    block = tmp_block_ord
-            else:  # 不在有序列表内
-                if tmp_block_ord != block:  # 当前文本块有列表项，开始新的有序列表
-                    block = '<ol>\n' + tmp_block_ord
-                    self._insidelist_ord = True
+        # 再考虑有序列表
+        tmp_block_ord = self._list_ord_pattern.sub(self._list_substring, block)           
+        if self._insidelist_ord:  # 已经在有序列表内
+            if tmp_block_ord == block:  # 当前文本块无列表项，结束当前列表
+                block = '</ol>\n' + tmp_block_ord
+                self._insidelist_ord = False
+            else:  # 当前文本块有列表项，延续当前列表
+                block = tmp_block_ord
+        else:  # 不在有序列表内
+            if tmp_block_ord != block:  # 当前文本块有列表项，开始新的有序列表
+                block = '<ol>\n' + tmp_block_ord
+                self._insidelist_ord = True
         return block
 
     def reset(self):
@@ -257,19 +270,18 @@ class BlockquoteRule:
         """
         按照规则进行处理
         """
-        if not inside_code:
-            tmp_block = self._blockquote_pattern.sub('', block)  # 去掉开头的字符>（&gt;）
-            if self._insideblockquote:  # 当前在区块引用内
-                if tmp_block == block:  # 文本未替换，说明当前文本块无区块引用
-                    block = '</blockquote>\n' + tmp_block  # 终止区块引用
-                    self._insideblockquote = False  #　重置标志符
-                else:  # 发生了文本替换，说明当前文本块中有区块引用
-                    block = tmp_block  #　直接替换文本，延续当前区块引用
-            else:  # 当前不在区块引用内
-                if tmp_block != block:  # 发生了文本替换，说明当前文本块中有区块引用
-                    block = '<blockquote>\n' + tmp_block  # 开始区块引用
-                    self._insideblockquote = True
-                # 还剩最后一种可能性：不在区块引用内，且未发生文本替换，这种情况不需处理
+        tmp_block = self._blockquote_pattern.sub('', block)  # 去掉开头的字符>（&gt;）
+        if self._insideblockquote:  # 当前在区块引用内
+            if tmp_block == block:  # 文本未替换，说明当前文本块无区块引用
+                block = '</blockquote>\n' + tmp_block  # 终止区块引用
+                self._insideblockquote = False  #　重置标志符
+            else:  # 发生了文本替换，说明当前文本块中有区块引用
+                block = tmp_block  #　直接替换文本，延续当前区块引用
+        else:  # 当前不在区块引用内
+            if tmp_block != block:  # 发生了文本替换，说明当前文本块中有区块引用
+                block = '<blockquote>\n' + tmp_block  # 开始区块引用
+                self._insideblockquote = True
+            # 还剩最后一种可能性：不在区块引用内，且未发生文本替换，这种情况不需处理
         return block
 
     def reset(self):
@@ -306,12 +318,11 @@ class EmphasisRule:
     def process(self, block):
         """
         按照规则进行处理
-        """
-        if not inside_code:          
-            block = self._strong_1_pattern.sub(self._strong_substring, block)
-            block = self._strong_2_pattern.sub(self._strong_substring, block)
-            block = self._em_1_pattern.sub(self._em_substring, block)
-            block = self._em_2_pattern.sub(self._em_substring, block)
+        """       
+        block = self._strong_1_pattern.sub(self._strong_substring, block)
+        block = self._strong_2_pattern.sub(self._strong_substring, block)
+        block = self._em_1_pattern.sub(self._em_substring, block)
+        block = self._em_2_pattern.sub(self._em_substring, block)
         return block
 
 
@@ -324,6 +335,7 @@ class LinkRule:
         self._link_1_pattern = re.compile('\[([^\[\]]+)\]\(([^\(\)]+)\)')
         self._link_2_pattern = re.compile('&lt;([a-zA-z]+://[^\s]*)&gt;')
         self._email_pattern = re.compile('&lt;(\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*)&gt;')
+        self._html_tag_pattern = re.compile('&lt;(/[a-zA-Z]+?[0-9]*?|[a-zA-Z]+?.*?)&gt;')
         random.seed()
 
     @classmethod
@@ -396,14 +408,21 @@ class LinkRule:
         email_address = LinkRule._random_render_email(match.group(1)) # 处理email地址
         return '<a href = "&#x6D;&#x61;&#x69;l&#x74;&#x6F;:%s">%s</a>' % (email_address, email_address)
 
+    @classmethod
+    def _html_tag_substring(cls, match):
+        """
+        HTML标签替换函数
+        """
+        return '<%s>' % match.group(1)
+
     def process(self, block):
         """
         按照规则进行处理
         """
-        if not inside_code:
-            block = self._link_1_pattern.sub(self._link_1_substring, block)
-            block = self._link_2_pattern.sub(self._link_2_substring, block)
-            block = self._email_pattern.sub(self._email_substring, block)
+        block = self._link_1_pattern.sub(self._link_1_substring, block)
+        block = self._link_2_pattern.sub(self._link_2_substring, block)
+        block = self._email_pattern.sub(self._email_substring, block)
+        block = self._html_tag_pattern.sub(self._html_tag_substring, block)
         return block
 
 
@@ -426,7 +445,7 @@ class ParagraphRule:
         """
         按照规则进行处理
         """
-        if not inside_code:
+        if not have_code:
             block = self._paragraph_pattern.sub(self._paragraph_substring, block)
         return block
 
@@ -461,7 +480,6 @@ class ImageRule:
                 new_address += c
         return new_address
 
-
     @classmethod
     def _img_substring(cls, match):
         """
@@ -471,13 +489,11 @@ class ImageRule:
         s2 = ImageRule._render_link(match.group(2))
         return '<img src = "%s" alt = "%s" />' % (s2, s1)
 
-
     def process(self, block):
         """
         按照规则进行处理
         """
-        if not inside_code:
-            block = self._img_pattern.sub(self._img_substring, block)
+        block = self._img_pattern.sub(self._img_substring, block)
         return block
 
 
@@ -530,6 +546,5 @@ class BackslashRule:
         """
         按照规则进行处理
         """
-        if not inside_code:
-            block = self._backslash_pattern.sub(self._backslash_substring, block)
+        block = self._backslash_pattern.sub(self._backslash_substring, block)
         return block

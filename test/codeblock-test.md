@@ -21,3 +21,22 @@ Pylint指令：
 ``` bash
 pylint --reports=n --disable=deprecated-module --const-rgx='[a-z_][a-z0-9_]{2,30}$'  simplecase.py
 ```
+
+```
+def f(x):
+    return x ** 2
+```
+```
+f = lambda x : x ** 2
+```
+
+类的声明：
+``` python
+class A:
+
+    def __init__(self):
+        pass
+
+    def do_something(self):
+        pass
+```

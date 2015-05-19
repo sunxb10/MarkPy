@@ -4,7 +4,7 @@
 
 [CRAN FTP](ftp://cran.r-project.org/)
 
-<https://www.baidu.com/>
+<https://www.google.com/>
 
 <file:///C:/Windows/win.ini>
 
