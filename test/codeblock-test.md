@@ -12,10 +12,12 @@ def is_markdown_file(filename):
              filename.lower().endswith('.markdown') or 
              filename.lower().endswith('.mdown')
            )
+
+if __name__ = '__main__':
+    print(is_markdown_file(sys.argv[1]))
 ```
 
 Pylint指令：
-
 ``` bash
 pylint --reports=n --disable=deprecated-module --const-rgx='[a-z_][a-z0-9_]{2,30}$'  simplecase.py
 ```
