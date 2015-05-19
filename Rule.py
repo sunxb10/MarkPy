@@ -19,18 +19,28 @@
 
 import re, random, binascii
 
-inside_code = False  # 判断是否在代码段<code></code>内，这是一个全局标志，会影响所有转换规则的执行
+inside_code = False  # 判断是否在行间代码段内，这是一个全局标志，会影响所有转换规则的执行
 
 
 class SpecialChRule:
     """
-    HTML特殊字符<, >和&，此规则必须先于其它所有规则执行
+    HTML特殊字符<, >, &及HTML标签，此规则必须先于其它所有规则执行
     """
     def __init__(self):
         self._leftangle_pattern = re.compile('<')
         self._rightangle_pattern = re.compile('>')
-        # 匹配字符&时必须使用否定预测零宽断言（negative lookahead assertion）以避免破坏之前字符<和>的替换结果
+        # 匹配字符&时必须使用否定预测零宽断言（negative lookahead assertion）以避免破坏HTML实体
         self._ampersand_pattern = re.compile('&(?!#*[0-9a-zA-Z]+;)')
+        # 由于Python标准库的re模块不支持非定长的回顾断言（lookbehind assertion），
+        # 因此这里需要先将<和>转换为lt;和gt;，再将其中符合HTML标签格式的&lt;tag&gt;还原为<tag>
+        self._html_tag_pattern = re.compile('&lt;(/[a-zA-Z]+?[0-9]*?|[a-zA-Z]+?.*?)&gt;')
+
+    @classmethod
+    def _html_tag_substring(cls, match):
+        """
+        HTML标签替换函数
+        """
+        return '<%s>' % match.group(1)
 
     def process(self, block):
         """
@@ -39,6 +49,7 @@ class SpecialChRule:
         block = self._leftangle_pattern.sub('&lt;', block)
         block = self._rightangle_pattern.sub('&gt;', block)
         block = self._ampersand_pattern.sub('&amp;', block)
+        block = self._html_tag_pattern.sub(self._html_tag_substring, block)
         return block
 
 
@@ -86,6 +97,7 @@ class CodeBlockRule:
         # 整个代码区有可能处于同一个block中，因此需要循环两遍分别处理开头和结尾的```
         for i in range(0, 2):  
             if inside_code:  # 当前已经在代码区内
+                # 替换掉_和*以防止被EmphasisRule错误解析
                 block = re.sub('_', '&#95;', block)
                 block = re.sub('\*', '&#42;', block)
                 tmp_block = self._code_pattern.sub('</code></pre>', block, 1)

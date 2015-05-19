@@ -25,7 +25,7 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 
 本程序目标是实现下列语法：
 
-- [ ] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html)   :exclamation:**TODO**：支持在Markdown文件直接使用HTML标签
+- [x] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html)
 - [x] [特殊字符自动转换（`>`、`<`和`&`）](http://daringfireball.net/projects/markdown/syntax#autoescape)
 - [x] [段落](http://daringfireball.net/projects/markdown/syntax#p)
 - [x] [Setext风格标题](http://daringfireball.net/projects/markdown/syntax#header)
