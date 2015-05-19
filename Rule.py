@@ -55,7 +55,10 @@ class InlineCodeRule:
         """
         行内代码替换函数
         """
-        return '<code>%s</code>' % match.group(1)
+        s = re.sub('_', '&#95;', match.group(1))
+        s = re.sub('\*', '&#42;', s)
+        s = re.sub('`', '&#96;', s)
+        return '<code>%s</code>' % s
 
     def process(self, block):
         """
