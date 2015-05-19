@@ -55,6 +55,7 @@ class InlineCodeRule:
         """
         行内代码替换函数
         """
+        # 替换掉可能会被其它规则错误解析的特殊字符
         s = re.sub('_', '&#95;', match.group(1))
         s = re.sub('\*', '&#42;', s)
         s = re.sub('`', '&#96;', s)
