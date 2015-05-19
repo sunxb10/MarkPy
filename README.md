@@ -29,7 +29,7 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 - [x] [特殊字符自动转换（`>`、`<`和`&`）](http://daringfireball.net/projects/markdown/syntax#autoescape)
 - [x] [段落](http://daringfireball.net/projects/markdown/syntax#p)
 - [x] [Setext风格标题](http://daringfireball.net/projects/markdown/syntax#header)
-- [ ] [Atx风格标题](http://daringfireball.net/projects/markdown/syntax#header)   :exclamation:**TODO**：支持闭合形式的Atx风格标题（close Atx-style headers）
+- [x] [Atx风格标题](http://daringfireball.net/projects/markdown/syntax#header)
 - [x] [区块引用](http://daringfireball.net/projects/markdown/syntax#blockquote)
 - [ ] [列表](http://daringfireball.net/projects/markdown/syntax#list)   :exclamation:**TODO**：支持列表的缩进嵌套
 - [x] [行内代码](http://daringfireball.net/projects/markdown/syntax#code)
