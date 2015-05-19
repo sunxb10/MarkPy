@@ -2,7 +2,6 @@
 解析转换器，应用Rule模块定义的规则进行转换
 """
 
-
 import Rule
 
 class Parser:
@@ -19,13 +18,13 @@ class Parser:
         self.add_rule(Rule.SpecialChRule())
         self.add_rule(Rule.CodeBlockRule())
         self.add_rule(Rule.InlineCodeRule())
-        self.add_rule(Rule.EmphasisRule())
+        self.add_rule(Rule.HeaderRule())
+        self.add_rule(Rule.HrRule()) 
         self.add_rule(Rule.BlockquoteRule())
         self.add_rule(Rule.ListRule())
         self.add_rule(Rule.ImageRule())
         self.add_rule(Rule.LinkRule())
         self.add_rule(Rule.EmphasisRule())
-        self.add_rule(Rule.HeaderRule())  
         self.add_rule(Rule.ParagraphRule())
 
     @classmethod

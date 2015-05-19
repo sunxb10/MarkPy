@@ -1,5 +1,19 @@
 """
 各种解析转换规则
+
+规则执行的顺序会影响程序结果，以下是经测试正确的顺序：
+
+    1. SpecialChRule
+    2. CodeBlockRule
+    3. InlineCodeRule
+    4. HeaderRule
+    5. HrRule
+    6. BlockquoteRule
+    7. ListRule
+    8. ImageRule
+    9. LinkRule
+    10. EmphasisRule
+    11. ParagraphRule
 """
 
 import re, random, binascii
@@ -125,6 +139,26 @@ class HeaderRule:
         if not inside_code:  #　只处理不在代码区块内的文本块，下同
             block = self._atx_pattern.sub(self._atx_substring, block)  # Atx <h1>~<h6>
             block = self._setext_pattern.sub(self._setext_substring, block)  # Setext <h1>、<h2>
+        return block
+
+
+class HrRule:
+    """
+    HTML水平线 <hr>
+    """
+    def __init__(self):
+        self._hr_1_pattern = re.compile('(?<=^)_{3, }(?=$)', re.M)  # 3个以上连续的下划线
+        self._hr_2_pattern = re.compile('(?<=^)\*\s*\*\s*\*(\**|(\s*\*)*)(?=$)', re.M)  # 3个以上星号，中间可以有空格
+        self._hr_3_pattern = re.compile('(?<=^)-\s*-\s*-(-*|(\s*-)*)(?=$)', re.M)  # 3个以上减号，中间可以有空格
+
+    def process(self, block):
+        """
+        按照规则进行处理
+        """
+        if not inside_code:  #　只处理不在代码区块内的文本块，下同
+            block = self._hr_1_pattern.sub('<hr />', block)
+            block = self._hr_2_pattern.sub('<hr />', block)
+            block = self._hr_3_pattern.sub('<hr />', block)
         return block
 
 

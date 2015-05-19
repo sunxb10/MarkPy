@@ -8,7 +8,7 @@ a (toy) parser of Markdown implemented in pure Python
 + `md2html.py`：主程序
 + `Parser.py`：解析器
 + `Rule.py`：解析规则
-+ `/test`：测试样例
++ `/test`：测试样例 `python md2html test`
 
 ## 使用方法
 
@@ -34,7 +34,7 @@ Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/mar
 - [ ] [列表](http://daringfireball.net/projects/markdown/syntax#list)   :exclamation:**TODO**：支持列表的缩进嵌套
 - [x] [行内代码](http://daringfireball.net/projects/markdown/syntax#code)
 - [x] [行间代码块（GitHub flavored fenced code blocks）](https://help.github.com/articles/github-flavored-markdown/#fenced-code-blocks)
-- [ ] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr)   :exclamation:**TODO**：支持水平分隔线
+- [x] [水平分隔线](http://daringfireball.net/projects/markdown/syntax#hr)
 - [x] [行间式超链接（inline-style links）](http://daringfireball.net/projects/markdown/syntax#link)
 - [ ] [参考式超链接（reference-style links）](http://daringfireball.net/projects/markdown/syntax#link)   :exclamation:**TODO**：支持参考式超链接
 - [x] [网址自动连接](http://daringfireball.net/projects/markdown/syntax#autolink)
