@@ -23,7 +23,7 @@ python md2html.py input # 批量转换/input目录下的Markdown文件，结果�
 
 Markdown语法参考：[Markdown: Syntax](http://daringfireball.net/projects/markdown/syntax)、[Markdown 语法说明](http://wowubuntu.com/markdown/index.html)、[GitHub Flavored Markdown](https://help.github.com/articles/github-flavored-markdown)
 
-本程序目前只实现了部分语法，具体如下所示：
+本程序目标是实现下列语法：
 
 - [ ] [兼容HTML标签](http://daringfireball.net/projects/markdown/syntax#html)   :exclamation:**TODO**：支持在Markdown文件直接使用HTML标签
 - [x] [特殊字符自动转换（`>`、`<`和`&`）](http://daringfireball.net/projects/markdown/syntax#autoescape)
