@@ -5,7 +5,7 @@
 
     1. SpecialChRule
     2. BackslashRule
-    3. CodeBlockRule
+    3. CodeBlockandParagraphRule
     4. InlineCodeRule
     5. HeaderRule
     6. HrRule
@@ -14,15 +14,9 @@
     9. ImageRule
     10. LinkRule
     11. EmphasisRule
-    12. ParagraphRule
 """
 
 import re, random, binascii
-
-# 包含行间代码的文本块段落与普通段落不同，由CodeBlockRule单独处理
-# 设置全局标志位以避免ParagraphRule的段落规则与CodeBlockRule冲突或重复
-have_code = False  
-
 
 
 class SpecialChRule:
@@ -33,7 +27,7 @@ class SpecialChRule:
         self._leftangle_pattern = re.compile('<')
         self._rightangle_pattern = re.compile('>')
         # 匹配字符&时必须使用否定预测零宽断言（negative lookahead assertion）以避免破坏HTML实体
-        self._ampersand_pattern = re.compile('&(?!#*[0-9a-zA-Z]+;)')
+        self._ampersand_pattern = re.compile('&(?!#[0-9]+|[a-zA-Z]+|#x[0-9a-fA-F]+;)')
         
     def process(self, block):
         """
@@ -51,7 +45,7 @@ class InlineCodeRule:
     HTML行内代码 <code>
     """
     def __init__(self):
-        self._inlinecode_pattern = re.compile('`(.+)`')
+        self._inlinecode_pattern = re.compile('`(.+?)`')
 
     @classmethod
     def _inlinecode_substring(cls, match):
@@ -59,10 +53,20 @@ class InlineCodeRule:
         行内代码替换函数
         """
         # 替换掉可能会被其它规则错误解析的特殊字符
-        s = re.sub('_', '&#95;', match.group(1))
-        s = re.sub('\*', '&#42;', s)
-        s = re.sub('`', '&#96;', s)
-        return '<code>%s</code>' % s
+        substring = match.group(1)
+        substring = re.sub('&', '&amp;', substring)
+        substring = re.sub('#', '&num;', substring)
+        substring = re.sub('_', '&lowbar;', substring)
+        substring = re.sub('\*', '&ast;', substring)
+        substring = re.sub('\[', '&lbrack;', substring)
+        substring = re.sub('\]', '&rbrack;', substring)
+        substring = re.sub('\(', '&lpar;', substring)
+        substring = re.sub('\)', '&rpar;', substring)
+        substring = re.sub('{', '&lbrace;', substring)
+        substring = re.sub('}', '&rbrace;', substring)
+        substring = re.sub(r'\\', '&bsol;', substring)
+        substring = re.sub('!', '&excl;', substring)
+        return '<code>%s</code>' % substring
 
     def process(self, block):
         """
@@ -73,57 +77,90 @@ class InlineCodeRule:
 
 
 
-class CodeBlockRule:
+class CodeBlockandParagraphRule:
     """
-    HTML行间代码块 <pre><code>
+    HTML行间代码块 <pre><code> 
+    HTML段落 <p>
     """
     def __init__(self):
-        global have_code 
         self._code_pattern = re.compile('(?<=^)`{3}.*(?=$)', re.M)
-        self._inside_code = False  # 记录行间代码块的开始和延续，_inside_code是line-level flag
-        have_code = False # 记录当前文本块是否包含行间代码，have_code是block-level flag
+        self._inside_code = False  # 记录行间代码块的开始和终止
+
+    @classmethod
+    def special_char_sub(cls, line):
+        """
+        替换代码行中可能会被其它规则错误解析的特殊字符
+        """
+        substring = line
+        substring = re.sub('&', '&amp;', substring)
+        substring = re.sub('#', '&num;', substring)
+        substring = re.sub('_', '&lowbar;', substring)
+        substring = re.sub('\*', '&ast;', substring)
+        substring = re.sub('\+', '&plus;', substring)
+        substring = re.sub('`', '&grave;', substring)
+        substring = re.sub('\[', '&lbrack;', substring)
+        substring = re.sub('\]', '&rbrack;', substring)
+        substring = re.sub('\(', '&lpar;', substring)
+        substring = re.sub('\)', '&rpar;', substring)
+        substring = re.sub('{', '&lbrace;', substring)
+        substring = re.sub('}', '&rbrace;', substring)
+        substring = re.sub(r'\\', '&bsol;', substring)
+        substring = re.sub('!', '&excl;', substring)
+        substring = re.sub('\.', '&period;', substring)
+        substring = re.sub('-', '&#45;', substring)
+        return substring
 
     def process(self, block):
         """
         按照规则进行处理
         """
-        global have_code
         new_block = ''
         # 考虑到行间代码有可能整个位于同一block中，因此必须在line level上进行处理
         # 将block切分成行，注意其末尾可能有\n，如此则split('\n')会产生无意义的空白行
         line_list = [line for line in block.split('\n') if line]
-        for line in line_list:
-            match = self._code_pattern.search(line)  # 搜索当前文本行中的```标志
-            if match:  # 当前文本行中有```标志
-                have_code = True  # 当前文本行包含行间代码
-                if self._inside_code: # 当前正处于行间代码块中，结束当前代码块
-                    line = '</code></pre></p>' + line[match.end(0):]
+        for idx in range(0, len(line_list)):
+            line = line_list[idx]
+            # print('LINE: ' + line)
+            if idx == 0:  # 首行
+                match = self._code_pattern.search(line)  # 找```标志
+                if match and self._inside_code:  # 结束当前代码块
+                    line = '</code></pre>\n</p>'
                     self._inside_code = False
-                else:  # 当前不在行间代码块中，开启新的代码块
-                    line = '<p><code><pre>' + line[match.end(0):]
+                elif match and not self._inside_code:  # 开启当前代码块
+                    line = '<p>\n<pre><code>'
                     self._inside_code = True
-            else: # 当前文本行中没有```标志
-                if self._inside_code:  # 当前正处于行间代码块中
-                    have_code = True
-                    # 延续当前代码块，替换特殊符号
-                    line = re.sub('#', '&#35;', line)
-                    line = re.sub('_', '&#95;', line)
-                    line = re.sub('\*', '&#42;', line)
-                    line = re.sub('\+', '&#43;', line)
-                    line = re.sub('`', '&#96;', line)
-                    line = re.sub('\[', '&#91;', line)
-                    line = re.sub('\]', '&#93;', line)
-                    line = re.sub('\(', '&#40;', line)
-                    line = re.sub('\)', '&#41;', line)
-                    line = re.sub('{', '&#123;', line)
-                    line = re.sub('}', '&#125;', line)
-                    line = re.sub(r'\\', '&#92;', line)
-                    line = re.sub('!', '&#33;', line)
-                    line = re.sub('\.', '&#46;', line)
-                    line = re.sub('-', '&#45;', line)
-                else:
-                    have_code = False
-            
+                elif not self._inside_code:  # 普通文本行
+                    line = '<p>\n' + line
+                    if len(line_list) == 1:  # 如果文本块只有一行，还需添加</p>
+                        line += '\n</p>'
+                else:  # self._inside_code == True，代码行，替换特殊字符
+                    line = self.special_char_sub(line)
+
+            elif idx == len(line_list) - 1:  # 末行
+                match = self._code_pattern.search(line)  # 找```标志
+                if match and self._inside_code:  # 结束当前代码块
+                    line = '</code></pre>\n</p>'
+                    self._inside_code = False
+                elif match and not self._inside_code:  # 开启当前代码块
+                    line = '</p>\n<p>\n<pre><code>'  # 需要首先用</p>结束之前的段落再新开<p><pre><code>
+                    self._inside_code = True
+                elif not self._inside_code:  # 普通文本行
+                    line += '\n</p>'
+                else:  # self._inside_code == True，代码行，替换特殊字符
+                    line = self.special_char_sub(line)
+
+            else:  # 其它行
+                match = self._code_pattern.search(line)  # 搜索当前文本行中的```标志
+                if match and self._inside_code:  # 当前文本行中有```标志且在行间代码块中，结束当前代码块
+                    line = '</code></pre>\n</p>\n<p>'
+                    self._inside_code = False                      
+                elif match and not self._inside_code:  # 当前文本行中有```标志且不在行间代码块中，开启新的代码块
+                    line = '</p>\n<p>\n<code><pre>'
+                    self._inside_code = True
+                elif self._inside_code: # 当前文本行中没有```标志且在行间代码块中，替换特殊字符
+                    line = self.special_char_sub(line)
+                else:  # self._inside_code == False，普通文本行
+                    pass 
             line += '\n'  # split('\n')切分得到的行本身是没有换行符的，这里添加换行符     
             new_block += line
         return new_block
@@ -132,8 +169,6 @@ class CodeBlockRule:
         """
         重置规则
         """
-        global have_code
-        have_code = False
         self._inside_code = False
 
 
@@ -157,10 +192,10 @@ class HeaderRule:
         header_split_last = match.group(2).split(' ', 1)[-1]
         # 判断标题后是否跟有一连串的#
         if header_split_last == '#' * len(header_split_last):
-            s = match.group(2).split(' ', 1)[0]
+            titlestring = match.group(2).split(' ', 1)[0]
         else:
-            s = match.group(2)
-        return '<h%d>%s</h%d>' % (len(match.group(1)), s, len(match.group(1)))
+            titlestring = match.group(2)
+        return '<h%d>%s</h%d>' % (len(match.group(1)), titlestring, len(match.group(1)))
 
     @classmethod
     def _setext_substring(cls, match):
@@ -186,7 +221,7 @@ class HrRule:
     HTML水平线 <hr>
     """
     def __init__(self):
-        self._hr_1_pattern = re.compile('(?<=^)_{3, }(?=$)', re.M)  # 3个以上连续的下划线
+        self._hr_1_pattern = re.compile('(?<=^)_{3,}(?=$)', re.M)  # 3个以上连续的下划线
         self._hr_2_pattern = re.compile('(?<=^)\*\s*\*\s*\*(\**|(\s*\*)*)(?=$)', re.M)  # 3个以上星号，中间可以有空格
         self._hr_3_pattern = re.compile('(?<=^)-\s*-\s*-(-*|(\s*-)*)(?=$)', re.M)  # 3个以上减号，中间可以有空格
 
@@ -330,6 +365,7 @@ class EmphasisRule:
 class LinkRule:
     """
     HTML链接 <a>
+    HTML标签
     """
     def __init__(self):
         self._link_1_pattern = re.compile('\[([^\[\]]+)\]\(([^\(\)]+)\)')
@@ -346,17 +382,17 @@ class LinkRule:
         new_address = ''
         for c in address:
             if c == '_':
-                new_address += '&#95;'
+                new_address += '&lowbar;'
             elif c == '*':
-                new_address += '&#42;'
-#            elif c == '[':
-#                new_address += '&#91;'
-#            elif c == ']':
-#                new_address += '&#93;'
-#            elif c == '(':
-#                new_address += '&#40;'
-#            elif c == ')':
-#                new_address += '&#41;'
+                new_address += '&ast;'
+            elif c == '[':
+                new_address += '&lbrack;'
+            elif c == ']':
+                new_address += '&rbrack;'
+            elif c == '(':
+                new_address += '&lpar;'
+            elif c == ')':
+                new_address += '&rpar;'
             else:
                 new_address += c
         return new_address
@@ -366,17 +402,17 @@ class LinkRule:
         """
         链接的替换函数
         """
-        s1 = LinkRule._render_link(match.group(1))
-        s2 = LinkRule._render_link(match.group(2))
-        return '<a href = "%s">%s</a>' % (s2, s1)
+        linkstring1 = LinkRule._render_link(match.group(1))
+        linkstring2 = LinkRule._render_link(match.group(2))
+        return '<a href = "%s">%s</a>' % (linkstring2, linkstring1)
 
     @classmethod
     def _link_2_substring(cls, match):
         """
         链接的替换函数
         """
-        s1 = LinkRule._render_link(match.group(1))
-        return '<a href = "%s">%s</a>' % (s1, s1)
+        linkstring = LinkRule._render_link(match.group(1))
+        return '<a href = "%s">%s</a>' % (linkstring, linkstring)
 
     @classmethod
     def _random_render_email(cls, email):
@@ -391,9 +427,9 @@ class LinkRule:
             elif c == '.':
                 new_email += '&#x2E;'
             elif c == '_':
-                new_email += '&#95;'
+                new_email += '&lowbar;'
             elif c == '*':
-                new_email += '&#42;'
+                new_email += '&ast;'
             elif random.random() > 0.2:
                 new_email += ('&#x' + binascii.b2a_hex(c.encode()).decode() + ';')
             else:
@@ -425,31 +461,6 @@ class LinkRule:
         block = self._html_tag_pattern.sub(self._html_tag_substring, block)
         return block
 
-
-
-class ParagraphRule:
-    """
-    HTML段落 <p>
-    """
-    def __init__(self):
-        self._paragraph_pattern = re.compile('(?<=^)(.+)(?=$)', re.S)
-
-    @classmethod
-    def _paragraph_substring(cls, match):
-        """
-        段落的替换函数
-        """
-        return '<p>%s</p>' % match.group(1)
-
-    def process(self, block):
-        """
-        按照规则进行处理
-        """
-        if not have_code:
-            block = self._paragraph_pattern.sub(self._paragraph_substring, block)
-        return block
-
-
 class ImageRule:
     """
     HTML链接 <a>
@@ -465,17 +476,17 @@ class ImageRule:
         new_address = ''
         for c in address:
             if c == '_':
-                new_address += '&#95;'
+                new_address += '&lowbar;'
             elif c == '*':
-                new_address += '&#42;'
-#            elif c == '[':
-#                new_address += '&#91;'
-#            elif c == ']':
-#                new_address += '&#93;'
-#            elif c == '(':
-#                new_address += '&#40;'
-#            elif c == ')':
-#                new_address += '&#41;'
+                new_address += '&ast;'
+            elif c == '[':
+                new_address += '&lbrack;'
+            elif c == ']':
+                new_address += '&rbrack;'
+            elif c == '(':
+                new_address += '&lpar;'
+            elif c == ')':
+                new_address += '&rpar;'
             else:
                 new_address += c
         return new_address
@@ -485,9 +496,9 @@ class ImageRule:
         """
         链接的替换函数
         """
-        s1 = ImageRule._render_link(match.group(1))
-        s2 = ImageRule._render_link(match.group(2))
-        return '<img src = "%s" alt = "%s" />' % (s2, s1)
+        linkstring1 = ImageRule._render_link(match.group(1))
+        linkstring2 = ImageRule._render_link(match.group(2))
+        return '<img src = "%s" alt = "%s" />' % (linkstring2, linkstring1)
 
     def process(self, block):
         """
@@ -511,36 +522,35 @@ class BackslashRule:
         反斜杠逃逸替换函数
         """
         if match.group(1) == '_':
-            return '&#95;'
+            return '&lowbar;'
         elif match.group(1) == '*':
-            return '&#42;'
+            return '&ast;'
         elif match.group(1) == '+':
-            return '&#43;'
+            return '&plus;'
         elif match.group(1) == '`':
-            return '&#96;'
+            return '&grave;'
         elif match.group(1) == '[':
-            return '&#91;'
+            return '&lbrack;'
         elif match.group(1) == ']':
-            return '&#93;'
+            return '&rbrack;'
         elif match.group(1) == '(':
-            return '&#40;'
+            return '&lpar;'
         elif match.group(1) == ')':
-            return '&#41;'
+            return '&rpar;'
         elif match.group(1) == '{':
-            return '&#123;'
+            return '&lbrace;'
         elif match.group(1) == '}':
-            return '&#125;' 
+            return '&rbrace;' 
         elif match.group(1) == '\\':
-            return '&#92;'
+            return '&bsol;'
         elif match.group(1) == '#':
-            return '&#35;'
+            return '&num;'
         elif match.group(1) == '!':
-            return '&#33;'
+            return '&excl;'
         elif match.group(1) == '.':
-            return '&#46;'
+            return '&period;'
         else:    # match.group(1) == '-'
             return '&#45;'
-
 
     def process(self, block):
         """

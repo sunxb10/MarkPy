@@ -19,8 +19,12 @@ if __name__ = '__main__':
 
 Pylint指令：
 ``` bash
-pylint --reports=n --disable=deprecated-module --const-rgx='[a-z_][a-z0-9_]{2,30}$'  simplecase.py
+
+pylint --const-rgx='[a-z_][a-z0-9_]{2,30}$'  simplecase.py
+
 ```
+以上指令可设定Pylint在检查代码时匹配常数的正则表达式
+
 
 ```
 def f(x):
@@ -30,6 +34,7 @@ def f(x):
 f = lambda x : x ** 2
 ```
 
+Python语言中
 类的声明：
 ``` python
 class A:
@@ -39,4 +44,21 @@ class A:
 
     def do_something(self):
         pass
+```
+类的声明使用`class`关键字
+类的特殊方法`__init__`
+
+
+
+```
+
+double func(double (&a)[10])
+{
+    double average = 0;
+    for(int i = 0; i < 10; i++){
+        average += a[i] / 10;
+    }
+    return average
+}
+
 ```
